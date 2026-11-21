@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TRAINING_CENTRE
+  DISTRICT_OFFICER
+  QUALITY_TEAM
+  STATE_OFFICE
+}
+
+enum BatchStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_DISTRICT_APPROVAL_1
+  PENDING_DISTRICT_APPROVAL_2
+  QUALITY_REVIEW
+  PENDING_STATE_APPROVAL
+  APPROVED
+  ISSUING_CERTIFICATES
+  COMPLETED
+  REJECTED
+  RETURNED
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+  RETURNED
+}
+
+enum CertificateStatus {
+  GENUINE
+  CANCELLED
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENDING
+  DELIVERED
+  FAILED
+  PERMANENTLY_FAILED
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  passwordHash     String
+  name             String
+  role             Role
+  trainingCentreId String?
+  trainingCentre   TrainingCentre? @relation(fields: [trainingCentreId], references: [id])
+  districtId       String?
+  district         District?       @relation(fields: [districtId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  approvals        Approval[]
+  qualityReviews   QualityReview[]
+  auditLogs        AuditLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model District {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  state           String           @default("Pragati State")
+  trainingCentres TrainingCentre[]
+  users           User[]
+
+  @@map("districts")
+}
+
+model TrainingCentre {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  districtId  String
+  district    District @relation(fields: [districtId], references: [id])
+  users       User[]
+  batches     Batch[]
+  createdAt   DateTime @default(now())
+
+  @@map("training_centres")
+}
+
+model Batch {
+  id                      String          @id @default(uuid())
+  batchNumber             String          @unique
+  courseName              String
+  trainingCentreId        String
+  trainingCentre          TrainingCentre  @relation(fields: [trainingCentreId], references: [id])
+  status                  BatchStatus     @default(DRAFT)
+  totalStudents           Int             @default(0)
+  isQualityReviewRequired Boolean         @default(false)
+  submittedAt             DateTime?
+  lastActionAt            DateTime        @default(now())
+  rejectionReason         String?
+  returnRemarks           String?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  candidates              Candidate[]
+  approvals               Approval[]
+  qualityReviews          QualityReview[]
+  certificates            Certificate[]
+  auditLogs               AuditLog[]
+
+  @@index([status])
+  @@index([trainingCentreId])
+  @@map("batches")
+}
+
+model Candidate {
+  id            String         @id @default(uuid())
+  batchId       String
+  batch         Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  fullName      String
+  phone         String
+  email         String?
+  rollNumber    String
+  marksObtained Float
+  totalMarks    Float
+  result        String         // "PASS", "DISTINCTION"
+  rowNumber     Int
+  createdAt     DateTime       @default(now())
+
+  certificate   Certificate?
+  notifications Notification[]
+
+  @@unique([batchId, rollNumber])
+  @@index([batchId])
+  @@map("candidates")
+}
+
+model Approval {
+  id        String         @id @default(uuid())
+  batchId   String
+  batch     Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  officerId String
+  officer   User           @relation(fields: [officerId], references: [id])
+  stage     String         // "DISTRICT_1", "DISTRICT_2", "STATE_FINAL"
+  action    ApprovalAction
+  remarks   String?
+  createdAt DateTime       @default(now())
+
+  @@unique([batchId, officerId, stage])
+  @@index([batchId])
+  @@map("approvals")
+}
+
+model QualityReview {
+  id           String   @id @default(uuid())
+  batchId      String
+  batch        Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User     @relation(fields: [reviewerId], references: [id])
+  status       String   // "APPROVED", "FLAGGED"
+  observations String
+  reviewedAt   DateTime @default(now())
+
+  @@index([batchId])
+  @@map("quality_reviews")
+}
+
+model Certificate {
+  id                String            @id @default(uuid())
+  certificateNumber String            @unique
+  candidateId       String            @unique
+  candidate         Candidate         @relation(fields: [candidateId], references: [id])
+  batchId           String
+  batch             Batch             @relation(fields: [batchId], references: [id])
+  candidateName     String
+  courseName        String
+  issueDate         DateTime          @default(now())
+  status            CertificateStatus @default(GENUINE)
+  qrCodeDataUrl     String            @db.Text
+  pdfPath           String
+  cancelledAt       DateTime?
+  cancelReason      String?
+  cancelledByUserId String?
+  createdAt         DateTime          @default(now())
+
+  notifications     Notification[]
+
+  @@index([certificateNumber])
+  @@index([status])
+  @@map("certificates")
+}
+
+model Notification {
+  id             String             @id @default(uuid())
+  recipientPhone String
+  candidateId    String
+  candidate      Candidate          @relation(fields: [candidateId], references: [id])
+  certificateId  String
+  certificate    Certificate        @relation(fields: [certificateId], references: [id])
+  channel        String             @default("WHATSAPP")
+  status         NotificationStatus @default(QUEUED)
+  attempts       Int                @default(0)
+  lastError      String?
+  lastAttemptAt  DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime           @default(now())
+
+  @@index([status])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  batchId    String?
+  batch      Batch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  userRole   Role
+  action     String
+  fromStatus String?
+  toStatus   String?
+  details    String?  @db.Text
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([batchId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_configs")
+}

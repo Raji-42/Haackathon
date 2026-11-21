@@ -1,0 +1,13 @@
+{
+  "name": "certiflow-root",
+  "version": "1.0.0",
+  "description": "CertiFlow - Skilling Certificate Issuance Platform Root Workspace",
+  "scripts": {
+    "test": "cd backend && npm test",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm run dev",
+    "prisma:seed": "cd backend && npm run prisma:seed"
+  }
+}
