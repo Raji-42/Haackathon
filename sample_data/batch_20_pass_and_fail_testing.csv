@@ -1,0 +1,21 @@
+fullName,phone,email,rollNumber,marksObtained,totalMarks,result
+Aarav Sharma,9876543201,aarav.sharma@example.com,PM-2026-001,88,100,DISTINCTION
+Bhavya Patel,9876543202,bhavya.patel@example.com,PM-2026-002,74,100,PASS
+Chetan Kumar,9876543203,chetan.kumar@example.com,PM-2026-003,28,100,FAIL
+Divya Singh,9876543204,divya.singh@example.com,PM-2026-004,65,100,PASS
+Eshwar Rao,9876543205,eshwar.rao@example.com,PM-2026-005,82,100,DISTINCTION
+Farzana Begum,9876543206,farzana.begum@example.com,PM-2026-006,32,100,FAIL
+Gopal Krishna,9876543207,gopal.krishna@example.com,PM-2026-007,85,100,DISTINCTION
+Harini Nair,9876543208,harini.nair@example.com,PM-2026-008,92,100,DISTINCTION
+Ishaan Gupta,9876543209,ishaan.gupta@example.com,PM-2026-009,69,100,PASS
+Jaya Lakshmi,9876543210,jaya.lakshmi@example.com,PM-2026-010,77,100,PASS
+Karan Joshi,9876543211,karan.joshi@example.com,PM-2026-011,25,100,FAIL
+Lavanya Sundaram,9876543212,lavanya.s@example.com,PM-2026-012,89,100,DISTINCTION
+Manish Tiwari,9876543213,manish.tiwari@example.com,PM-2026-013,72,100,PASS
+Nandini Reddy,9876543214,nandini.reddy@example.com,PM-2026-014,95,100,DISTINCTION
+Omkar Deshmukh,9876543215,omkar.deshmukh@example.com,PM-2026-015,80,100,DISTINCTION
+Pooja Hegde,9876543216,pooja.hegde@example.com,PM-2026-016,34,100,FAIL
+Rahul Varma,9876543217,rahul.varma@example.com,PM-2026-017,78,100,PASS
+Sneha Kulkarni,9876543218,sneha.k@example.com,PM-2026-018,86,100,DISTINCTION
+Tarun Teja,9876543219,tarun.teja@example.com,PM-2026-019,71,100,PASS
+Varun Sandesh,9876543220,varun.s@example.com,PM-2026-020,90,100,DISTINCTION

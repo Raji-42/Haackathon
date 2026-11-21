@@ -1,9 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, UserCheck, Search, Award } from 'lucide-react';
+import { getRoleDefaultPath } from '../context/AuthContext';
+import { Award, LogOut, LogIn } from 'lucide-react';
 
 export const DemoUserBar: React.FC = () => {
-  const { user, switchUser, isPublicMode } = useAuth();
+  const { user, switchUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const personas = [
     { key: 'anika', name: 'Anika', role: 'Training Centre', icon: '🏫', color: 'bg-emerald-600' },
@@ -15,9 +18,28 @@ export const DemoUserBar: React.FC = () => {
     { key: 'public', name: 'Public', role: 'QR Verification', icon: '🌐', color: 'bg-slate-700' },
   ];
 
-  const currentKey = isPublicMode
-    ? 'public'
-    : user?.email.split('@')[0].toLowerCase() || '';
+  const currentKey = user?.email.split('@')[0].toLowerCase() || '';
+
+  const handlePersonaSwitch = async (key: string) => {
+    if (key === 'public') {
+      logout();
+      navigate('/verify');
+      return;
+    }
+    try {
+      const switchedUser = await switchUser(key);
+      if (switchedUser) {
+        navigate(getRoleDefaultPath(switchedUser.role));
+      }
+    } catch (err) {
+      console.error('Failed to switch persona:', err);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="bg-slate-900 border-b border-slate-800 text-white px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs shadow-md">
@@ -38,11 +60,13 @@ export const DemoUserBar: React.FC = () => {
       <div className="flex items-center space-x-1.5 overflow-x-auto py-1">
         <span className="text-slate-400 font-medium mr-1 hidden md:inline">Demo Persona:</span>
         {personas.map((p) => {
-          const isActive = currentKey === p.key;
+          const isActive = p.key === 'public'
+            ? !user
+            : currentKey === p.key && !!user;
           return (
             <button
               key={p.key}
-              onClick={() => switchUser(p.key)}
+              onClick={() => handlePersonaSwitch(p.key)}
               className={`flex items-center space-x-1 px-2.5 py-1 rounded transition-all font-medium whitespace-nowrap ${
                 isActive
                   ? `${p.color} text-white shadow-inner ring-2 ring-white/30 scale-105`
@@ -56,6 +80,29 @@ export const DemoUserBar: React.FC = () => {
             </button>
           );
         })}
+      </div>
+
+      {/* Login / Logout Quick Action */}
+      <div className="flex items-center space-x-2">
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-1 px-2.5 py-1 bg-rose-600/80 hover:bg-rose-600 text-white font-bold rounded transition shadow-sm"
+            title="Log out of current account"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="flex items-center space-x-1 px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded transition shadow-sm"
+            title="Go to login page"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In</span>
+          </button>
+        )}
       </div>
     </div>
   );

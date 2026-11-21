@@ -71,7 +71,7 @@ export const DistrictDashboard: React.FC = () => {
 
   // Filter batches requiring district attention
   const pendingBatches = batches.filter((b) =>
-    ['PENDING_DISTRICT_APPROVAL_1', 'PENDING_DISTRICT_APPROVAL_2'].includes(b.status)
+    ['PENDING_DISTRICT_APPROVAL_1', 'PENDING_DISTRICT_APPROVAL_2', 'PENDING_DISTRICT_APPROVAL'].includes(b.status)
   );
 
   return (
@@ -212,7 +212,7 @@ export const DistrictDashboard: React.FC = () => {
                       <td className="px-4 py-3 text-slate-700">{b.courseName}</td>
                       <td className="px-4 py-3 font-semibold text-slate-800">{b.totalStudents} students</td>
                       <td className="px-4 py-3">
-                        {b.status === 'PENDING_DISTRICT_APPROVAL_1' ? (
+                        {b.status === 'PENDING_DISTRICT_APPROVAL_1' || (b.status as string) === 'PENDING_DISTRICT_APPROVAL' ? (
                           <span className="px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800 text-[10px]">
                             Stage 1: Awaiting 1st Officer
                           </span>

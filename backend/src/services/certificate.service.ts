@@ -4,7 +4,6 @@ import { config } from '../config';
 import { QRUtil } from '../utils/qr.util';
 import { PdfUtil } from '../utils/pdf.util';
 import { CertificateStatus, NotificationStatus } from '@prisma/client';
-import { WhatsAppService } from './whatsapp.service';
 
 export class CertificateService {
   /**
@@ -64,11 +63,16 @@ export class CertificateService {
     const pdfFilename = `${certificateNumber}.pdf`;
     const pdfPath = path.join(config.certificateStorageDir, pdfFilename);
 
+    const trainingCentreName =
+      candidate.batch?.trainingCentre?.name || 'Apex Skilling Academy';
+    const courseName =
+      candidate.batch?.courseName || 'Web & Full Stack Development';
+
     await PdfUtil.generateCertificate({
       certificateNumber,
       candidateName: candidate.fullName,
-      courseName: candidate.batch.courseName,
-      trainingCentreName: candidate.batch.trainingCentre.name,
+      courseName,
+      trainingCentreName,
       issueDate: new Date(),
       result: candidate.result,
       marksObtained: candidate.marksObtained,
@@ -84,7 +88,7 @@ export class CertificateService {
         candidateId: candidate.id,
         batchId: candidate.batchId,
         candidateName: candidate.fullName,
-        courseName: candidate.batch.courseName,
+        courseName,
         status: CertificateStatus.GENUINE,
         qrCodeDataUrl,
         pdfPath,
@@ -103,6 +107,7 @@ export class CertificateService {
       },
     });
 
+    console.log(`✅ Certificate generated: ${certificateNumber} for ${candidate.fullName}`);
     return { certificate, notification };
   }
 
@@ -115,6 +120,7 @@ export class CertificateService {
       orderBy: { rowNumber: 'asc' },
     });
 
+    console.log(`[CertificateService] Issuing certificates for ${candidates.length} candidate(s) in batch ${batchId}...`);
     const results = [];
     for (const candidate of candidates) {
       try {
@@ -134,6 +140,7 @@ export class CertificateService {
       },
     });
 
+    console.log(`[CertificateService] Successfully issued ${results.length} certificates. Batch ${batchId} marked COMPLETED.`);
     return results;
   }
 
@@ -146,8 +153,9 @@ export class CertificateService {
     cancelledByUserId: string,
     cancelReason: string
   ) {
+    const cleanNumber = certificateNumber.trim().toUpperCase();
     const cert = await prisma.certificate.findUnique({
-      where: { certificateNumber },
+      where: { certificateNumber: cleanNumber },
     });
 
     if (!cert) {
@@ -159,7 +167,7 @@ export class CertificateService {
     }
 
     const updated = await prisma.certificate.update({
-      where: { certificateNumber },
+      where: { certificateNumber: cleanNumber },
       data: {
         status: CertificateStatus.CANCELLED,
         cancelledAt: new Date(),

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   FileSpreadsheet,
@@ -7,12 +8,18 @@ import {
   Building2,
   Search,
   LogOut,
-  FolderKanban,
+  LogIn,
   Award,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
-  const { user, isPublicMode, setPublicMode, logout } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col justify-between hidden md:flex shrink-0">
@@ -31,9 +38,9 @@ export const Sidebar: React.FC = () => {
         {/* Current Active User Profile Card */}
         <div className="p-4 mx-3 my-4 bg-slate-800/80 rounded-xl border border-slate-700/60 shadow-sm">
           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Active Persona</div>
-          <div className="font-bold text-white text-sm">{user ? user.name : 'Public Verifier'}</div>
+          <div className="font-bold text-white text-sm">{user ? user.name : 'Logged Out / Public'}</div>
           <div className="text-xs text-sky-400 font-semibold mt-0.5">
-            {user ? user.role.replace(/_/g, ' ') : 'No Login Mode'}
+            {user ? user.role.replace(/_/g, ' ') : 'No Active Session'}
           </div>
           {user?.trainingCentre && (
             <div className="text-[11px] text-slate-300 mt-2 pt-2 border-t border-slate-700/50">
@@ -52,44 +59,58 @@ export const Sidebar: React.FC = () => {
           <div className="text-[10px] text-slate-500 font-bold px-3 py-1 uppercase tracking-wider">Navigation</div>
 
           {user?.role === 'TRAINING_CENTRE' && (
-            <div className="px-3 py-2.5 rounded-lg bg-sky-600/20 text-sky-400 flex items-center space-x-2 font-bold">
+            <div className="px-3 py-2.5 rounded-lg bg-sky-600/20 text-sky-400 flex items-center space-x-2 font-bold cursor-pointer" onClick={() => navigate('/training')}>
               <FileSpreadsheet className="w-4 h-4" />
               <span>Training Centre Batches</span>
             </div>
           )}
 
           {user?.role === 'DISTRICT_OFFICER' && (
-            <div className="px-3 py-2.5 rounded-lg bg-blue-600/20 text-blue-400 flex items-center space-x-2 font-bold">
+            <div className="px-3 py-2.5 rounded-lg bg-blue-600/20 text-blue-400 flex items-center space-x-2 font-bold cursor-pointer" onClick={() => navigate('/district')}>
               <CheckSquare className="w-4 h-4" />
               <span>District Approval Inbox</span>
             </div>
           )}
 
           {user?.role === 'QUALITY_TEAM' && (
-            <div className="px-3 py-2.5 rounded-lg bg-purple-600/20 text-purple-400 flex items-center space-x-2 font-bold">
+            <div className="px-3 py-2.5 rounded-lg bg-purple-600/20 text-purple-400 flex items-center space-x-2 font-bold cursor-pointer" onClick={() => navigate('/quality')}>
               <ShieldCheck className="w-4 h-4" />
               <span>Quality Review Audits</span>
             </div>
           )}
 
           {user?.role === 'STATE_OFFICE' && (
-            <div className="px-3 py-2.5 rounded-lg bg-amber-600/20 text-amber-400 flex items-center space-x-2 font-bold">
+            <div className="px-3 py-2.5 rounded-lg bg-amber-600/20 text-amber-400 flex items-center space-x-2 font-bold cursor-pointer" onClick={() => navigate('/state')}>
               <Building2 className="w-4 h-4" />
               <span>State Office Dashboard</span>
             </div>
           )}
 
           <button
-            onClick={() => setPublicMode(true)}
-            className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center space-x-2 transition ${
-              isPublicMode
-                ? 'bg-emerald-600 text-white font-bold'
-                : 'hover:bg-slate-800 text-slate-300'
-            }`}
+            onClick={() => navigate('/verify')}
+            className="w-full text-left px-3 py-2.5 rounded-lg flex items-center space-x-2 transition hover:bg-slate-800 text-slate-300"
           >
             <Search className="w-4 h-4" />
             <span>Public Certificate Verification</span>
           </button>
+
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 font-bold flex items-center space-x-2 transition mt-2 border-t border-slate-800/80 pt-3"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out / Logout</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sky-400 hover:bg-sky-950/40 hover:text-sky-300 font-bold flex items-center space-x-2 transition mt-2 border-t border-slate-800/80 pt-3"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign In / Login</span>
+            </button>
+          )}
         </nav>
       </div>
 

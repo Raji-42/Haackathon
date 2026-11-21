@@ -25,7 +25,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSuc
     }
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent, submitImmediately = false) => {
     e.preventDefault();
     if (!file) {
       setGeneralError('Please select a spreadsheet file (.xlsx, .csv)');
@@ -37,7 +37,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSuc
     setGeneralError(null);
 
     try {
-      await ApiService.uploadBatch(courseName, file);
+      const res = await ApiService.uploadBatch(courseName, file);
+      if (submitImmediately && res.batch?.id) {
+        await ApiService.submitBatch(res.batch.id);
+      }
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -152,7 +155,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSuc
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={onClose}
@@ -161,11 +164,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSuc
                 Cancel
               </button>
               <button
-                type="submit"
+                type="button"
                 disabled={loading || !file}
+                onClick={(e) => handleUpload(e, false)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition"
+              >
+                Save as Draft
+              </button>
+              <button
+                type="button"
+                disabled={loading || !file}
+                onClick={(e) => handleUpload(e, true)}
                 className="px-5 py-2 bg-sky-700 hover:bg-sky-800 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1"
               >
-                {loading ? 'Validating & Uploading...' : 'Validate & Upload Batch'}
+                {loading ? 'Processing...' : 'Validate & Submit to District (Dev)'}
               </button>
             </div>
           </form>

@@ -44,10 +44,12 @@ export class ApprovalService {
       }
 
       // Check current batch status
-      if (
-        batch.status !== BatchStatus.PENDING_DISTRICT_APPROVAL_1 &&
-        batch.status !== BatchStatus.PENDING_DISTRICT_APPROVAL_2
-      ) {
+      const isDistrictStage1 =
+        batch.status === BatchStatus.PENDING_DISTRICT_APPROVAL_1 ||
+        (batch.status as any) === 'PENDING_DISTRICT_APPROVAL';
+      const isDistrictStage2 = batch.status === BatchStatus.PENDING_DISTRICT_APPROVAL_2;
+
+      if (!isDistrictStage1 && !isDistrictStage2) {
         throw new Error(`Batch is in state '${batch.status}', not awaiting district officer approval`);
       }
 
@@ -66,7 +68,7 @@ export class ApprovalService {
           data: {
             batchId,
             officerId,
-            stage: batch.status === BatchStatus.PENDING_DISTRICT_APPROVAL_1 ? 'DISTRICT_1' : 'DISTRICT_2',
+            stage: isDistrictStage1 ? 'DISTRICT_1' : 'DISTRICT_2',
             action: ApprovalAction.REJECTED,
             remarks,
           },
@@ -101,7 +103,7 @@ export class ApprovalService {
           data: {
             batchId,
             officerId,
-            stage: batch.status === BatchStatus.PENDING_DISTRICT_APPROVAL_1 ? 'DISTRICT_1' : 'DISTRICT_2',
+            stage: isDistrictStage1 ? 'DISTRICT_1' : 'DISTRICT_2',
             action: ApprovalAction.RETURNED,
             remarks,
           },
@@ -122,7 +124,7 @@ export class ApprovalService {
       }
 
       // Handle APPROVAL (Two-Officer Rule)
-      if (batch.status === BatchStatus.PENDING_DISTRICT_APPROVAL_1) {
+      if (isDistrictStage1) {
         // Record 1st District Approval
         await tx.approval.create({
           data: {
@@ -361,11 +363,20 @@ export class ApprovalService {
       return { batch: updated, approved: true };
     });
 
-    // If state approved, dispatch certificate generation through QueueManager
+    // If state approved, generate certificates immediately so database records & PDFs exist at once!
     if (result.approved) {
+      try {
+        console.log(`[ApprovalService] Generating certificates for approved batch ${batchId}...`);
+        await CertificateService.issueCertificatesForBatch(batchId);
+      } catch (err) {
+        console.error(`[ApprovalService] Error issuing certificates for batch ${batchId}:`, err);
+      }
+      // Also enqueue background WhatsApp delivery notifications
       QueueManager.enqueueCertificateIssuance(batchId);
     }
 
-    return result.batch;
+    // Return the latest batch state (now COMPLETED with certificates)
+    const finalBatch = await prisma.batch.findUnique({ where: { id: batchId } });
+    return finalBatch || result.batch;
   }
 }
